@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Currency Converter</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 60px; background:#f3f6fa; }
+    h2 { color:#333; }
+    input, select, button { padding:10px; margin:8px; font-size:16px; border-radius:6px; border:1px solid #ccc; }
+    button { background:#007bff; color:#fff; border:none; cursor:pointer; }
+    button:hover { background:#0056b3; }
+    #result { margin-top:20px; font-weight:700; }
+    #status { margin-top:8px; color:#555; }
+  </style>
+</head>
+<body>
+  <h2>💱 Currency Converter App</h2>
+
+  <input type="number" id="amount" placeholder="Enter amount" min="0" step="any" />
+  <select id="from">
+    <option value="USD" selected>USD</option>
+    <option value="INR">INR</option>
+    <option value="EUR">EUR</option>
+    <option value="GBP">GBP</option>
+  </select>
+  <select id="to">
+    <option value="INR">INR</option>
+    <option value="USD">USD</option>
+    <option value="EUR">EUR</option>
+    <option value="GBP">GBP</option>
+  </select>
+
+  <button id="convertBtn">Convert</button>
+  <div id="status"></div>
+  <h3 id="result"></h3>
+
+  <script>
+    document.getElementById('convertBtn').addEventListener('click', convert);
+
+    async function convert() {
+      const amountStr = document.getElementById('amount').value;
+      const from = document.getElementById('from').value;
+      const to = document.getElementById('to').value;
+      const status = document.getElementById('status');
+      const result = document.getElementById('result');
+
+      result.innerText = '';
+      status.innerText = '';
+
+      const amount = parseFloat(amountStr);
+      if (!amountStr || isNaN(amount) || amount <= 0) {
+        status.innerText = '⚠️ Please enter a valid amount (greater than 0).';
+        return;
+      }
+      if (from === to) {
+        result.innerText = `${amount.toFixed(2)} ${from} = ${amount.toFixed(2)} ${to}`;
+        return;
+      }
+
+      status.innerText = '⏳ Fetching latest rates...';
+      try {
+        const resp = await fetch(`https://open.er-api.com/v6/latest/${encodeURIComponent(from)}`);
+        if (!resp.ok) throw new Error('Network response was not ok');
+        const data = await resp.json();
+
+        if (!data || !data.rates || typeof data.rates[to] === 'undefined') {
+          throw new Error('Invalid rates data');
+        }
+
+        const rate = data.rates[to];
+        const converted = (amount * rate).toFixed(2);
+
+        result.innerText = `${amount.toFixed(2)} ${from} = ${converted} ${to}`;
+        status.innerText = `💡 1 ${from} = ${rate.toFixed(4)} ${to}`;
+      } catch (err) {
+        console.error(err);
+        status.innerText = '❌ Could not fetch rates. Try again later.';
+      }
+    }
+  </script>
+</body>
+</html>
